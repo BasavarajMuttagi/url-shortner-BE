@@ -4,7 +4,6 @@ import * as crypto from "crypto";
 import UrlModel from "../models/shortener.model";
 import UserModel from "../models/user.model";
 
-
 const createShortLink = async (req: Request, res: Response) => {
   try {
     const {
@@ -47,14 +46,23 @@ const getAllUrls = async (req: Request, res: Response) => {
       .populate("All_URLS")
       .select("All_URLS");
 
-    
-
     if (!user) {
       res.status(409).send({ message: "User Not Found!" });
       return;
     }
 
-    res.status(200).send({ message: "Success", All_URLS: user.All_URLS });
+    let count = 0;
+    user.All_URLS.forEach((element: any) => {
+      count = count + element.visits.length;
+    });
+
+    const users = count;
+    res.status(200).send({
+      message: "Success",
+      All_URLS: user.All_URLS,
+      total_urls_created: user.All_URLS.length,
+      users,
+    });
     return;
   } catch (error) {
     res.status(500).send("Internal Server Error");
@@ -69,12 +77,10 @@ const deleteOneUrl = async (req: Request, res: Response) => {
       user: { email },
     } = req.body;
 
-
     const user = await UserModel.findOne({ email }).updateOne({
       $pull: { All_URLS: _id },
     });
 
-   
     if (!user) {
       res.status(409).send({ message: "User Not Found!" });
       return;
@@ -82,7 +88,6 @@ const deleteOneUrl = async (req: Request, res: Response) => {
 
     res.status(200).send({ message: "Success" });
   } catch (error) {
- 
     res.status(500).send("Internal Server Error");
   }
 };
